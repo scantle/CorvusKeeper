@@ -2,10 +2,48 @@ import datetime as dt
 import pandas as pd
 from os import path
 
-
 # ----------------------------------------------------------------------------------------------------------------------#
 
 class RavenFileReader(object):
+    """Generic text file reader with special methods for working with Raven Hydrological Modelling Framework
+    (raven.uwaterloo.ca) input files.
+    Methods `nexttag()`, `read_dateline()` and `read_RavenFrame()` should be able to get you through just
+    about anything in a Raven input file.
+
+    TODO - use pathlib Path() explicitly instead of str for filepaths?
+
+    Attributes
+    ----------
+    filename : str (or Path)
+        Filename, with path, of file being read
+    path : str
+        Path to directory containing the file opened, used when opening :RedirectToFile files
+    fileobject : IO
+        Connection to file created with open()
+    _backburner : list
+        Private list that stores the file(s) from which :RedirectToFile was called, used allow
+        for faux-recursive file reading
+
+    Methods
+    -------
+    eof_check()
+        Checks for end of file (EOF) by requesting a certain number of bytes and seeing if they are returned
+    nextline()
+        Returns next line, pre-stripped
+    nexttag()
+        Returns the next Raven tag line (starts with :), with smart faux-recursive handling of file
+        redirects. False if EOF.
+    read_dateline()
+        Parses a Raven dateline: start date/time, time step size, number of values in file
+    skiplines(lines)
+        Skips specified number of lines in file
+    comma_detector()
+        Attempts to determine if Raven line is delimited by commas (as opposed to spaces/tabs)
+    read_RavenFrame(nvalues, header, names, id_col, time_tuple, na_values)
+        Reads a raven property/attribute table into a Pandas DataFrame
+    get_datadist()
+        Finds the distance to the next tag (:) or a blank line. Useful to determine table/data lengths
+    """
 
     def __init__(self, filename):
         self.filename = filename
@@ -154,7 +192,7 @@ class RavenFileReader(object):
         return df, units
 
     def get_datadist(self):
-        """ Finds the distance to the next tag (:) blank line
+        """ Finds the distance to the next tag (:) or a blank line. Useful to determine table/data lengths
         """
         counter = 0
         last_pos = self.fileobject.tell()
