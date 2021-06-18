@@ -1,4 +1,6 @@
 import datetime as dt
+import os
+
 import pandas as pd
 from pathlib import Path
 
@@ -96,8 +98,10 @@ class RavenFileReader(object):
             line = self.nextline()
             # Redirect
             if line.startswith(':RedirectToFile'):
-                nextfile = self.path / line.replace(':RedirectToFile', '').strip()
-                if nextfile.exists:
+                # Strip line
+                nextfile = line.replace(':RedirectToFile', '').strip().replace('\\', os.sep)
+                nextfile = self.path / nextfile
+                if nextfile.exists():
                     self._backburner.append(self.fileobject)
                     self.fileobject = open(nextfile, 'r')
                 else:
